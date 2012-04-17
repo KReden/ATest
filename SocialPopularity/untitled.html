@@ -1,0 +1,340 @@
+<?php
+//-----------------------------------------------------------------------------
+// Captions
+//-----------------------------------------------------------------------------
+$indicator_caption = "";
+$geog_caption = "";
+$para_la_indexacion = "";
+
+//-----------------------------------------------------------------------------
+// Parse the URL parameters
+//-----------------------------------------------------------------------------
+/*http://metropulsechicago.org/
+#viewtype=drilldeeper
+&vistype=grid
+&geogtype=
+&geogkey=
+&geoglevel=CO
+&containerlist=
+&containerlevel=RE
+&keywords=
+&datafamily=
+&datacategory=
+&datasubcategory=HOUSGHHTYP
+&datafield=
+&datid=
+&datatype=datafields
+&includearchive=
+*/
+
+// TODO Beware of the _escaped_fragment value, it swallows the first url variable
+
+$datafamily = (isset($_GET["datafamily"])) ? $_GET["datafamily"] : "";
+$datacategory = (isset($_GET["datacategory"])) ? $_GET["datacategory"] : "";
+$datasubcategory = (isset($_GET["datasubcategory"])) ? $_GET["datasubcategory"] : "";
+$datafield = (isset($_GET["datafield"])) ? $_GET["datafield"] : "";
+$datid = (isset($_GET["datid"])) ? $_GET["datid"] : "";
+$geoglevel = (isset($_GET["geoglevel"])) ? $_GET["geoglevel"] : "";
+$geogkey = (isset($_GET["geogkey"])) ? $_GET["geogkey"] : "";
+$containerlist = (isset($_GET["containerlist"])) ? $_GET["containerlist"] : "";
+$containerlevel = (isset($_GET["containerlevel"])) ? $_GET["containerlevel"] : "";
+          
+$topic_params = array("datafamily"      => $datafamily, 
+                      "datacategory"    => $datacategory,
+                      "datasubcategory" => $datasubcategory,
+                      "datafield"       => $datafield,
+                      "datid"           => $datid 
+                     );
+$geog_params = array("geoglevel"      => $geoglevel,
+                     "geogkey"        => $geogkey,
+                     "containerlist"  => $containerlist,
+                     "containerlevel" => $containerlevel
+                    );
+//-----------------------------------------------------------------------------
+// Check if URL has an indicator and geog parameters
+//-----------------------------------------------------------------------------
+$valid_topic = false;
+foreach ($topic_params as $key => $value) {
+    if($value != ""){
+        $valid_topic = true;
+        break;
+    }
+}
+$valid_geog = ($geogkey != "") ? true : false;
+
+if($valid_topic && $valid_geog){
+    $para_la_indexacion = getCaptions($topic_params, $geog_params, $geogkey);
+}
+
+function getCaptions($topic_params, $geog_params, $geogkey){
+    //-----------------------------------------------------------------------------
+    // Get a full indicator description
+    //-----------------------------------------------------------------------------
+    $indicator_url = "http://data.cmap.illinois.gov/API/XML/GetInfoForDatafield.aspx?";               
+    foreach ($topic_params as $key => $value) {
+      $indicator_url .= "&" . $key . "=" . $value;                    
+    }  
+    $indicator_response = file_get_contents($indicator_url);
+    $indicator_data = new SimpleXMLElement($indicator_response);
+    $indicator_caption = $indicator_data->data->item['caption'];
+    //-----------------------------------------------------------------------------
+    // Get geography description
+    //-----------------------------------------------------------------------------
+    $geog_url = "http://data.cmap.illinois.gov/API/XML/GetGeogAreas.aspx?";
+    foreach ($geog_params as $key => $value) {
+      $geog_url .= "&" . $key . "=" . $value;                    
+    }
+    $geog_response = file_get_contents($geog_url);
+    //print_r($geog_response);
+    $geog_data = new SimpleXMLElement($geog_response);
+    $geogs = $geog_data->xpath('data/geogs/geog');
+    foreach($geogs as $geog){
+        //print_r($geog['id']." - ".$geogkey."\n");
+        if($geog['id'] == $geogkey){
+            //print_r("MATCH"."\n");
+            $geog_caption = $geog['name'];
+            break;
+        }        
+    }
+    //-----------------------------------------------------------------------------
+    // So now we have $indicator_caption and $geog_caption.
+    // That's enough for google indexing. 
+    // Let's plug it in HTML (#flashContent and <title>).
+    // For convinience, let's return a nice, human and google readable string.
+    //-----------------------------------------------------------------------------
+    return $indicator_caption . " in " . $geog_caption;    
+}
+
+
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0014)about:internet -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"> 
+    <!-- 
+    Smart developers always View Source. 
+    
+    This application was built using Adobe Flex, an open source framework
+    for building rich Internet applications that get delivered via the
+    Flash Player or to desktops via Adobe AIR. 
+    
+    Learn more about Flex at http://flex.org 
+    // -->
+    <head>
+
+        <title><?php $title = ($para_la_indexacion != "") ? $para_la_indexacion : "MetroPulse Chicago"; echo $title; ?></title>
+        <meta name="google" value="notranslate">         
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <!-- Include CSS to eliminate any default margins/padding and set the height of the html element and 
+             the body element to 100%, because Firefox, or any Gecko based browser, interprets percentage as 
+             the percentage of the height of its parent container, which has to be set explicitly.  Fix for
+             Firefox 3.6 focus border issues.  Initially, don't display flashContent div so it won't show 
+             if JavaScript disabled.
+        -->
+        <style type="text/css" media="screen"> 
+            html, body  { height:100%; }
+            body { margin:0; 
+                   padding:0; 
+                   overflow:auto; 
+                   text-align:center; 
+                   background-color: @bgcolor@; 
+                   color:#FEE;
+                   font-family:Arial;
+            }   
+            object:focus { outline:none; }
+            #flashContent { display:none; 
+                            margin: 0 auto;
+                            width: 340px;
+                            margin-top:40px;    
+                        }
+            #cmap_logo{
+                
+            }   
+            #metropulse_logo{
+                margin-top:50px;
+            }         
+
+        </style>
+        
+        <!-- Enable Browser History by replacing useBrowserHistory tokens with two hyphens -->
+        <!-- BEGIN Browser History required section -->
+        <link rel="stylesheet" type="text/css" href="history/history.css" />
+        <script type="text/javascript" src="history/history.js"></script>
+        <!-- END Browser History required section -->
+
+        <script type="text/javascript" language="javascript" src="user/FABridge.js"></script>
+            
+        <script type="text/javascript" src="swfobject.js"></script>
+        <script type="text/javascript">
+            <!-- For version detection, set to min. required Flash Player version, or 0 (or 0.0.0), for no version detection. --> 
+            var swfVersionStr = "@version_major@.@version_minor@.@version_revision@";
+            <!-- To use express install, set to playerProductInstall.swf, otherwise the empty string. -->
+            var xiSwfUrlStr = "playerProductInstall.swf";
+            var flashvars = {};
+            var params = {};
+            params.quality = "high";
+            params.bgcolor = "@bgcolor@";
+            params.allowscriptaccess = "sameDomain";
+            params.allowfullscreen = "true";
+            var attributes = {};
+            attributes.id = "@application@";
+            attributes.name = "@application@";
+            attributes.align = "middle";
+            swfobject.embedSWF(
+                "@swf@.swf", "flashContent", 
+                "@width@", "@height@", 
+                swfVersionStr, xiSwfUrlStr, 
+                flashvars, params, attributes);
+            <!-- JavaScript enabled so display the flashContent div in case it is not replaced with a swf object. -->
+            swfobject.createCSS("#flashContent", "display:block;text-align:left;");
+
+      </script>
+    </head>
+    <body>
+        <p>This is a testing site for Google Ajax indexing. Please go to <a style="color:#fff;" href="http://www.metropulsechicago.org">MetroPulse Chicago</a> to view original site</p>
+        <!-- SWFObject's dynamic embed method replaces this alternative HTML content with Flash content when enough 
+             JavaScript and Flash plug-in support is available. The div is initially hidden so that it doesn't show
+             when JavaScript is disabled.
+        -->
+        <div id="flashContent">
+            <p id="indexing_caption"><?php $body_copy = ($para_la_indexacion != "") ? $para_la_indexacion : "MetroPulse Chicago"; echo $body_copy; ?></p>
+            <img id="cmap_logo" src="@cmap_logo@" />
+            <img id="metropulse_logo" src="@metropulse_logo@" />
+            <p>Created by CMAP and the Trust, MetroPulse is a simple but powerful portal into a vast warehouse of data on factors that shape quality of life in our seven-county Chicago region.  A key goal of the Regional Indicators Project is to track progress toward implementing the GO TO 2040 comprehensive regional plan. As such, indicators are divided into the major themes originally identified in the 2040 vision, with equity, sustainability, and innovation woven throughout.</p>
+            <hr style="color:#888" /><br />
+            <b>You need a Flash enabled browser to view this site.</b><br /><br />
+            <script type="text/javascript"> 
+                var pageHost = ((document.location.protocol == "https:") ? "https://" : "http://"); 
+                document.write("<a style=\"float:right;\" href='http://www.adobe.com/go/getflashplayer'><img src='" 
+                                + pageHost + "www.adobe.com/images/shared/download_buttons/get_flash_player.gif' alt='Get Adobe Flash player' /></a>" ); 
+            </script> 
+            
+        </div>
+        <script src="jquery.min.js"></script>
+        <script type="text/javascript" src="xregexp-min.js"></script>
+        <script type="text/javascript">
+
+        var proxy_url = "http://www.chordol.com/cmap/search/ba-simple-proxy.php";
+        var indicator_caption = "";
+        var geog_caption = "";
+        var indexing_caption = "";
+
+        function getHashVars()
+        {
+            var fragment = window.location.href;
+            var vars = {};
+            var pair;
+            var hashes = fragment.slice(fragment.indexOf('#') + 2, fragment.length ).split('&');
+
+            for(var i = 0; i < hashes.length; i++)
+            {
+                if(hashes[i]!=""){
+                    pair = hashes[i].split('=');
+                    vars[pair[0]] = pair[1];
+                }
+            }
+         
+            return vars;
+        }
+        // Ok, now we have the hash vars
+        var hash_vars = getHashVars();
+
+        // Lets add them to urls of services that return captions
+        var parameters = "";
+        $.each(hash_vars, function(key, value) { 
+          parameters += "&" + key + "=" + value; 
+        });
+        var indicator_url = "http://data.cmap.illinois.gov/API/XML/GetInfoForDatafield.aspx?" + parameters;     
+        var geog_url = "http://data.cmap.illinois.gov/API/XML/GetGeogAreas.aspx?" + parameters;          
+
+        function cleanXML(data){
+            var re = new RegExp("<root>(.*?)</root>");
+            var m = re.exec(data);
+            return m;
+        }
+
+        $.ajax({
+            url: proxy_url,
+            type: "GET",
+            data:{"url" : indicator_url},
+            success: function( data ) {
+                var xmlDoc = $.parseXML( data.contents );
+                if(xmlDoc){
+                    indicator_caption = $(xmlDoc).find("item").attr('caption');
+                    setSearchKeywords();
+                }
+
+            },
+            error: function( data ) {
+                console.log( data );
+            }
+        });
+
+        $.ajax({
+            url: proxy_url,
+            dataType:"json",
+            type: "GET",
+            data:{"url" : geog_url},
+            success: function( data ) {
+                var re = XRegExp("<root>(.*?)<\/root>", "s");
+                var clean = re.exec(data.contents);
+                if(clean){
+                    var xmlDoc = $.parseXML( clean[0] );
+                    if(xmlDoc){
+                        var g = $(xmlDoc).find('geog[id|="' + hash_vars['geogkey']+ '"]');
+                        geog_caption = $(g).attr("name");
+                        setSearchKeywords();
+                    }    
+                }
+                
+            },
+            error: function( data ) {
+                console.log( data );
+            }
+        });
+
+        function setSearchKeywords(){
+            if(indicator_caption != undefined && indicator_caption != "" && geog_caption != undefined && geog_caption != ""){
+                indexing_caption = indicator_caption + " in " + geog_caption;
+                $("title").html(indexing_caption);
+                $("#indexing_caption").html(indexing_caption);
+            }
+        }
+
+            
+        </script>
+        
+        <noscript>
+            <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="@width@" height="@height@" id="@application@">
+                <param name="movie" value="@swf@.swf" />
+                <param name="quality" value="high" />
+                <param name="bgcolor" value="@bgcolor@" />
+                <param name="allowScriptAccess" value="sameDomain" />
+                <param name="allowFullScreen" value="true" />
+                <param name="wmode" value="opaque" />
+                <!--[if !IE]>-->
+                <object type="application/x-shockwave-flash" data="@swf@.swf" width="@width@" height="@height@">
+                    <param name="quality" value="high" />
+                    <param name="bgcolor" value="@bgcolor@" />
+                    <param name="allowScriptAccess" value="sameDomain" />
+                    <param name="allowFullScreen" value="true" />
+                    <param name="wmode" value="opaque" />
+                <!--<![endif]-->
+                <!--[if gte IE 6]>-->
+                    <p> 
+                        Either scripts and active content are not permitted to run or Adobe Flash Player version
+                        @version_major@.@version_minor@.@version_revision@ or greater is not installed.
+                    </p>
+                <!--<![endif]-->
+                    <a href="http://www.adobe.com/go/getflashplayer">
+                        <img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash Player" />
+                    </a>
+                <!--[if !IE]>-->
+                </object>
+                <!--<![endif]-->
+            </object>
+        </noscript>  
+        <!-- <iframe id="iframe_content" name="iframe_content"
+            frameborder="0"
+            style="position:absolute;background-color:white;border:0px;display:none;"></iframe> -->
+   </body>
+</html>
