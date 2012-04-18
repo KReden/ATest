@@ -48,16 +48,16 @@ function curl($url){
 
 //Call curl. Pass it our built url, and set the returned value to response variable
 $response = curl(urldecode($url));
-$output = $response;
-echo $output[0]["status"]["text"]; 
-//echo $output->error;
+
+//Echo out some stuff.
+//echo $response[0]["status"]["text"]; 
 
 //DEBUG LINE I used this to see the path I needed to take to get the data I wanted.
 //var_dump($output);
 ?>
 <!DOCTYPE html>
 <head>
-	<title><?php $title = ($output[0]["status"]["text"] != "") ? $output : "Social Profiler";?></title>
+	<title><?php $title = ($response[0]["status"]["text"] != "") ? $response : "Social Profiler";?></title>
 	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
 	<link rel="stylesheet" type="text/css" href="css/bootstrap-responsive.min.css" />
 	<meta name="fragment" content="!">
@@ -119,20 +119,24 @@ $("#testClicker").click(function(){
 			dataType: "jsonp",
 			success: function(data){
 				console.log(data);
-			//do something with results
-				var randomNum = Math.ceil(Math.random()* data.contents.results.length)
-				console.log(randomNum);
-				for (var i = data.contents.results.length - 1; i >= 0; i--) {
-					console.log(data.contents.results[i].from_user_id);
-				};
-				if ($("#paragraph").html() == ""){
-					$("#paragraph").html(data.contents.text + " ");
-				}
-				else{
-					$("#paragraph").append(data.contents.text + " ");
-				}
+				alert(data[0].status.text);
 				$("#introDiv").hide();
 				$("#resultsDiv").show();
+				$("#paragraph").append(data.status.text);
+			//do something with results
+			// 	var randomNum = Math.ceil(Math.random()* data.contents.results.length)
+			// 	console.log(randomNum);
+			// 	for (var i = data.contents.results.length - 1; i >= 0; i--) {
+			// 		console.log(data.contents.results[i].from_user_id);
+			// 	};
+			// 	if ($("#paragraph").html() == ""){
+			// 		$("#paragraph").html(data.contents.text + " ");
+			// 	}
+			// 	else{
+			// 		$("#paragraph").append(data.contents.text + " ");
+			// 	}
+			// 	$("#introDiv").hide();
+			// 	$("#resultsDiv").show();
 			},
 			error: function(jqXHR, textStatus, errorThrown){
 				console.log("jqXHR: " + jqXHR + "textStatus: " + textStatus + "errorThrown: " +  errorThrown);
