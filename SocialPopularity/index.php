@@ -1,20 +1,47 @@
 <?php
-$twitter_user_url = "https://api.twitter.com/1/users/lookup.json?user_id=185418292&include_entities=true";
-$parsed_url = parse_url($twitter_user_url);
-$count = count($parsed_url);
-for($i = 0; $i < $count; $i++){
-	echo $parsed_url[$i];
-}
-//echo $parsed_url[1];
-// $twitter_response = ;
-// $test = $twitter_response;
-echo(file_get_contents($parsed_url));
+//GET the escaped fragment keys and values
+$escaped_fragment = $_GET["_escaped_fragment_"];
+
+//This is the same url from the javascript. Notice that I
+//Got rid of the ? after json
+$base_url = "https://api.twitter.com/1/users/lookup.json";
+
+/*One way to split a large query string sent to this page.
+I do it this way becasue the googlebot seems to do just that,
+sent a giant string to the server that are the query params.*/
+$exploded_fragment = explode("&", $escaped_fragment);
+
+/*This a probably not the best way to add the query parameters
+into an array but I dont know of a better way to do so currently*/
+$params = array(
+	'user_id' => $exploded_fragment[0],
+	'include_entities' => $exploded_fragment[1],
+	);
+
+
+//This will be used later on to make our query
+$queryString = "";
+
+//For each loop to make the query string
+// foreach ($params as $key => $value){
+// 	$queryString .= "$key=" . urldecode($value) . "&";
+// 	echo $queryString;
+// }
+
+$queryString .= $exploded_fragment[0] . urldecode("&") . $exploded_fragment[1];  
+echo $queryString;
+//Append the query string to the base url
+$url = "$base_url?$queryString";
+echo $url;
+//Output something
+$output = file_get_contents(urldecode($url));
+
+echo $output;
+
 ?>
-
-
 <!DOCTYPE html>
 <head>
-	<title><?php $title = ($test != "") ? $test : "Social Profiler"; echo $title; ?></title>
+	<title><?php $title = ($output != "") ? $output : "Social Profiler"; echo $output; ?></title>
 	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
 	<link rel="stylesheet" type="text/css" href="css/bootstrap-responsive.min.css" />
 	<meta name="fragment" content="!">
@@ -61,22 +88,14 @@ $(document).ready(function () {
 	$("#introDiv").show();
 	$("#resultsDiv").hide();
 });
-
+var url = "https://api.twitter.com/1/users/lookup.json?user_id=182810585&include_entities=true";
+//var sliced_url = url.slice(url.indexOf('?') + 1).split('&');
+//console.log(sliced_url);
 $("#testClicker").click(function(){
 	//This url isused for searching twitter by KEY word
 	// var url = "http://search.twitter.com/search.json?q=" + $("#search_feild").val() + "&rpp=5&include_entities=true&result_type=mixed";
 	//This url is used to search by user name - RESTful-
-	var url = "https://api.twitter.com/1/users/lookup.json?user_id=182810585&include_entities=true";
-	//Some User ID's to use
-	// "185418292",
-	// "259489080",
-	// "550392014", 
-	// "182810585", 
-	// "414398219", 
-	// "14691200", 
-	// "343132137", 
-	// "18825961" 
-
+	//var url = "https://api.twitter.com/1/users/lookup.json?user_id=182810585&include_entities=true";
 		//Twitter search call
 		$.ajax({
 			url: url,
@@ -107,6 +126,7 @@ $("#testClicker").click(function(){
 $.ajax({
 	url: "http://www.kreden.com/SocialPopularity/index.php",
 	type: "GET",
+	data: {"_escaped_fragment_" : "user_id=182810585&include_entities=true"},
 	//dataType: "jsonp",
 	success: function(data){
 		console.log(data);
