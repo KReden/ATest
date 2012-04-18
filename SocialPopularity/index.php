@@ -8,40 +8,56 @@ $base_url = "https://api.twitter.com/1/users/lookup.json";
 
 /*One way to split a large query string sent to this page.
 I do it this way becasue the googlebot seems to do just that,
-sent a giant string to the server that are the query params.*/
+sends a giant string to the server that are the query params.*/
 $exploded_fragment = explode("&", $escaped_fragment);
 
 /*This a probably not the best way to add the query parameters
 into an array but I dont know of a better way to do so currently*/
-$params = array(
-	'user_id' => $exploded_fragment[0],
-	'include_entities' => $exploded_fragment[1],
-	);
+// $params = array(
+// 	'user_id' => $exploded_fragment[0],
+// 	'include_entities' => $exploded_fragment[1],
+// 	);
 
 
 //This will be used later on to make our query
 $queryString = "";
 
-//For each loop to make the query string
-// foreach ($params as $key => $value){
-// 	$queryString .= "$key=" . urldecode($value) . "&";
-// 	echo $queryString;
-// }
 
-$queryString .= $exploded_fragment[0] . urldecode("&") . $exploded_fragment[1];  
-echo $queryString;
+
+//I am manually making the query string here from the exploded fragments 
+//since I know exactly what they are. To do this dynamically you will probably 
+//want to do a foreach loop similir to this:
+		//For each loop to make the query string
+		// foreach ($params as $key => $value){
+		// 	$queryString .= "$key=" . urldecode($value) . "&";
+		// }
+$queryString .= $exploded_fragment[0] . urldecode("&") . $exploded_fragment[1];
+
 //Append the query string to the base url
 $url = "$base_url?$queryString";
-echo $url;
-//Output something
-$output = file_get_contents(urldecode($url));
 
-echo $output;
+//Using cURL(http://php.net/manual/en/book.curl.php) I set up a function to handle
+//the server request to twitter.
+function curl($url){
+	$ch = curl_init(); 									//Initialize cURL
+	curl_setopt($ch, CURLOPT_URL, $url);				//Set an option for a cURL transfer -Setting up the url to fetch-
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);		//Set an option for a cURL transfer -return the response as a string-
+	$data = curl_exec($ch);								//Execute the request (GET). The response is stored in the data variable
+	return json_decode($data, true);					//The response that twitter sends in JSON so we must decode this before the return. Makes it into an array
+}
 
+//Call curl. Pass it our built url, and set the returned value to response variable
+$response = curl(urldecode($url));
+$output = $response;
+echo $output["error"]; 
+//echo $output->error;
+
+//DEBUG LINE I used this to see the path I needed to take to get the data I wanted.
+var_dump($output);
 ?>
 <!DOCTYPE html>
 <head>
-	<title><?php $title = ($output != "") ? $output : "Social Profiler"; echo $output; ?></title>
+	<title><?php $title = ($output["error"] != "") ? $output : "Social Profiler";?></title>
 	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
 	<link rel="stylesheet" type="text/css" href="css/bootstrap-responsive.min.css" />
 	<meta name="fragment" content="!">
