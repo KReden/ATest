@@ -80,10 +80,8 @@ $response = curl(urldecode($url));
 	<div id="main_page_view" class="container">
 		<div class="hero-unit span8">
 			<div id="introDiv">
-				<h1 class="row">Search Something!</h1>
-				<div>
-					<input id="search_feild" type="text" class="input-xlarge" />
-				</div>
+				<h1 class="row">Press zee button</h1>
+				
 				<p>
 					<a href="#resultsDiv" id="testClicker" class="btn btn-primary btn-large row">Get the band back together</a>
 				</p>	
@@ -119,24 +117,11 @@ $("#testClicker").click(function(){
 			dataType: "jsonp",
 			success: function(data){
 				console.log(data);
-				alert(data[0].status.text);
+				//alert(data[0].status.text);
 				$("#introDiv").hide();
 				$("#resultsDiv").show();
-				$("#paragraph").append(data.status.text);
+				$("#paragraph").append(data[0].status.text);
 			//do something with results
-			// 	var randomNum = Math.ceil(Math.random()* data.contents.results.length)
-			// 	console.log(randomNum);
-			// 	for (var i = data.contents.results.length - 1; i >= 0; i--) {
-			// 		console.log(data.contents.results[i].from_user_id);
-			// 	};
-			// 	if ($("#paragraph").html() == ""){
-			// 		$("#paragraph").html(data.contents.text + " ");
-			// 	}
-			// 	else{
-			// 		$("#paragraph").append(data.contents.text + " ");
-			// 	}
-			// 	$("#introDiv").hide();
-			// 	$("#resultsDiv").show();
 			},
 			error: function(jqXHR, textStatus, errorThrown){
 				console.log("jqXHR: " + jqXHR + "textStatus: " + textStatus + "errorThrown: " +  errorThrown);
@@ -147,7 +132,6 @@ $.ajax({
 	url: "http://www.kreden.com/SocialPopularity/index.php",
 	type: "GET",
 	data: {"_escaped_fragment_" : "user_id=182810585&include_entities=true"},
-	//dataType: "jsonp",
 	success: function(data){
 		console.log(data);
 	},
