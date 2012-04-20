@@ -9,7 +9,8 @@ $base_url = "https://api.twitter.com/1/users/lookup.json";
 /*One way to split a large query string sent to this page.
 I do it this way becasue the googlebot seems to do just that,
 sends a giant string to the server that are the query params.*/
-$exploded_fragment = explode("&", $escaped_fragment);
+// SHORTCUT I'm simplifying for now
+//$exploded_fragment = explode("&", $escaped_fragment);
 
 /*This a probably not the best way to add the query parameters
 into an array but I dont know of a better way to do so currently*/
@@ -20,7 +21,8 @@ into an array but I dont know of a better way to do so currently*/
 
 
 //This will be used later on to make our query
-$queryString = "";
+// SHORTCUT I'm simplifying for now
+//$queryString = "";
 
 
 
@@ -31,36 +33,43 @@ $queryString = "";
 		// foreach ($params as $key => $value){
 		// 	$queryString .= "$key=" . urldecode($value) . "&";
 		// }
-$queryString .= $exploded_fragment[0] . urldecode("&") . $exploded_fragment[1];
+// SHORTCUT I'm simplifying for now
+//$queryString .= $exploded_fragment[0] . urldecode("&") . $exploded_fragment[1];
 
-//Append the query string to the base url
-$url = "$base_url?$queryString";
+// Make the php call only if there is something in escaped_fragment url parameter
+// Otherwise leave it up to JS
+if($escaped_fragment != ""){
+	//Append the query string to the base url
+	$url = "$base_url?screen_name=$escaped_fragment&include_entities=true";
 
-//Using cURL(http://php.net/manual/en/book.curl.php) I set up a function to handle
-//the server request to twitter.
-function curl($url){
-	$ch = curl_init(); 									//Initialize cURL
-	curl_setopt($ch, CURLOPT_URL, $url);				//Set an option for a cURL transfer -Setting up the url to fetch-
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);		//Set an option for a cURL transfer -return the response as a string-
-	$data = curl_exec($ch);								//Execute the request (GET). The response is stored in the data variable
-	return json_decode($data, true);					//The response that twitter sends in JSON so we must decode this before the return. Makes it into an array
+	//Using cURL(http://php.net/manual/en/book.curl.php) I set up a function to handle
+	//the server request to twitter.
+	function curl($url){
+		$ch = curl_init(); 									//Initialize cURL
+		curl_setopt($ch, CURLOPT_URL, $url);				//Set an option for a cURL transfer -Setting up the url to fetch-
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);		//Set an option for a cURL transfer -return the response as a string-
+		$data = curl_exec($ch);								//Execute the request (GET). The response is stored in the data variable
+		return json_decode($data, true);					//The response that twitter sends in JSON so we must decode this before the return. Makes it into an array
+	}
+
+	//Call curl. Pass it our built url, and set the returned value to response variable
+	$response = curl(urldecode($url));
+	// SHORTCUT targeting first match for simplicity
+	$response = $response[0];
+	//echo $output[0]["status"]["text"]; 
+	//echo $output->error;
+
+	//DEBUG LINE I used this to see the path I needed to take to get the data I wanted.
+	//var_dump($output);	
 }
 
-//Call curl. Pass it our built url, and set the returned value to response variable
-$response = curl(urldecode($url));
-
-//Echo out some stuff.
-//echo $response[0]["status"]["text"]; 
-
-//DEBUG LINE I used this to see the path I needed to take to get the data I wanted.
-//var_dump($output);
 ?>
 <!DOCTYPE html>
 <head>
-	<title><?php $title = ($response[0]["status"]["text"] != "") ? $response : "Social Profiler";?></title>
+	<title><?php echo $response["name"];?></title>
 	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
 	<link rel="stylesheet" type="text/css" href="css/bootstrap-responsive.min.css" />
-	<meta name="fragment" content="!">
+	<meta name="fragment" content="!"></meta>
 </head>
 <body>
 	<!-- Begin Nav Bar Section -->
@@ -72,22 +81,27 @@ $response = curl(urldecode($url));
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</a>
-				<a class="brand" href="http://www.kreden.com/SocialPopularity/">Social Profilier</a>
+				<a class="brand" href="/">Social Profilier</a>
 			</div>
 		</div>
 	</div>
 	<!-- End Nav Bar Section -->
-	<div id="main_page_view" class="container">
-		<div class="hero-unit span8">
+	<div id="main_page_view" class="container" style="margin-top:40px;">
+		<div class="hero-unit">
 			<div id="introDiv">
-				<h1 class="row">Press zee button</h1>
-				
+				<h1 class="row">Search Something!</h1>
+				<div>
+					<input id="search_feild" type="text" class="input-xlarge" />
+				</div>
 				<p>
-					<a href="#resultsDiv" id="testClicker" class="btn btn-primary btn-large row">Get the band back together</a>
+					<a id="testClicker" class="btn btn-primary btn-large row">Get the band back together</a>
 				</p>	
 			</div>
 			<div id="resultsDiv">
-				<p id="paragraph"></p>
+				<img id="user_image" style="margin-bottom:10px;" alt="<?php echo $response["name"];?>" src="<?php echo $response["profile_image_url"];?>"/>
+				<p id="user_name">Name: <span><?php echo $response["name"];?><span></p>
+				<p id="user_description">Description: <span><?php echo $response["description"];?></span></p>
+				<p id="user_location">Location: <span><?php echo $response["location"];?></span> </p>
 			</div>
 		</div>
 	</div>
@@ -96,20 +110,21 @@ $response = curl(urldecode($url));
 <script type="text/javascript" src="js/lib/jquery-1.7.1.min.js"></script>
 <script type="text/javascript" src="js/lib/jquery.tools.min.js"></script>
 <script type="text/javascript" src="js/lib/bootstrap.min.js"></script>
-<script type="text/javascript" src="js/lib/puremvc-1.0.1.js"></script>
 <script type="text/javascript">
 $(document).ready(function () {
-	$("#introDiv").show();
+	// Hide search form for now
+	$("#introDiv").hide();
 	$("#resultsDiv").hide();
-});
-var url = "https://api.twitter.com/1/users/lookup.json?user_id=182810585&include_entities=true";
-//var sliced_url = url.slice(url.indexOf('?') + 1).split('&');
-//console.log(sliced_url);
-$("#testClicker").click(function(){
-	//This url isused for searching twitter by KEY word
-	// var url = "http://search.twitter.com/search.json?q=" + $("#search_feild").val() + "&rpp=5&include_entities=true&result_type=mixed";
-	//This url is used to search by user name - RESTful-
-	//var url = "https://api.twitter.com/1/users/lookup.json?user_id=182810585&include_entities=true";
+	// Example URL: http://localhost/cmap/ATest/SocialPopularity/#!sashadzeletovic
+	var screen_name = window.location.hash.substring(2);
+	if(screen_name == ""){
+		alert("Add a Twitte user name to this url after # to run this test.");
+	}else{
+		var url = "https://api.twitter.com/1/users/lookup.json?screen_name="+screen_name+"&include_entities=true";
+		//This url isused for searching twitter by KEY word
+		// var url = "http://search.twitter.com/search.json?q=" + $("#search_feild").val() + "&rpp=5&include_entities=true&result_type=mixed";
+		//This url is used to search by user name - RESTful-
+		//var url = "https://api.twitter.com/1/users/lookup.json?user_id=182810585&include_entities=true";
 		//Twitter search call
 		$.ajax({
 			url: url,
@@ -117,27 +132,22 @@ $("#testClicker").click(function(){
 			dataType: "jsonp",
 			success: function(data){
 				console.log(data);
-				//alert(data[0].status.text);
-				$("#introDiv").hide();
-				$("#resultsDiv").show();
-				$("#paragraph").append(data[0].status.text);
-			//do something with results
+				var first_match = data[0];
+				$("title").text(first_match.name);
+				$("#user_image").attr("alt", first_match.name);
+				$("#user_image").attr("src", first_match.profile_image_url);
+				$("#user_name span").html(first_match.name);
+				$("#user_description span").html(first_match.description);
+				$("#user_location span").html(first_match.location);
+				$("#resultsDiv").fadeIn();
 			},
 			error: function(jqXHR, textStatus, errorThrown){
 				console.log("jqXHR: " + jqXHR + "textStatus: " + textStatus + "errorThrown: " +  errorThrown);
 			}
-		});
-	});
-$.ajax({
-	url: "http://www.kreden.com/SocialPopularity/index.php",
-	type: "GET",
-	data: {"_escaped_fragment_" : "user_id=182810585&include_entities=true"},
-	success: function(data){
-		console.log(data);
-	},
-	error: function(jqXHR, textStatus, errorThrown){
-		console.log("jqXHR: " + jqXHR + "textStatus: " + textStatus + "errorThrown: " +  errorThrown);
+		});	
 	}
+	
+	
 });
 
 </script>
